@@ -25,13 +25,15 @@ class WebPushServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $config = $this->webPushConfig();
+
         $this->app->when(WebPushChannel::class)
             ->needs(WebPush::class)
             ->give(fn (): WebPush => (new WebPush(
-                $this->webPushAuth(), [], 30, config('webpush.client_options', [])
+                $this->webPushAuth(), [], 30, $config['client_options']
             ))
                 ->setReuseVAPIDHeaders(true)
-                ->setAutomaticPadding(config('webpush.automatic_padding')));
+                ->setAutomaticPadding($config['automatic_padding']));
 
         $this->app->when(WebPushChannel::class)
             ->needs(ReportHandlerInterface::class)
@@ -50,7 +52,7 @@ class WebPushServiceProvider extends ServiceProvider
     protected function webPushAuth(): array
     {
         $config = [];
-        $webpush = config('webpush');
+        $webpush = $this->webPushConfig();
         $publicKey = $webpush['vapid']['public_key'];
         $privateKey = $webpush['vapid']['private_key'];
 
@@ -72,6 +74,26 @@ class WebPushServiceProvider extends ServiceProvider
                 $config['VAPID']['pemFile'] = base_path($config['VAPID']['pemFile']);
             }
         }
+
+        return $config;
+    }
+
+    /**
+     * @return array{
+     *     vapid: array{subject: string|null, public_key: string|null, private_key: string|null, pem_file: string|null},
+     *     client_options: array<mixed>,
+     *     automatic_padding: bool|int
+     * }
+     */
+    protected function webPushConfig(): array
+    {
+        /** @var array{
+         *     vapid: array{subject: string|null, public_key: string|null, private_key: string|null, pem_file: string|null},
+         *     client_options: array<mixed>,
+         *     automatic_padding: bool|int
+         * } $config
+         */
+        $config = config('webpush');
 
         return $config;
     }

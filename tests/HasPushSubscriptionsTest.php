@@ -22,7 +22,7 @@ class HasPushSubscriptionsTest extends TestCase
     public function subscription_can_be_created(): void
     {
         $this->testUser->updatePushSubscription('foo', 'key', 'token', 'aesgcm');
-        $subscription = $this->testUser->pushSubscriptions()->first();
+        $subscription = $this->testUser->pushSubscriptions()->firstOrFail();
 
         $this->assertEquals('foo', $subscription->endpoint);
         $this->assertEquals('key', $subscription->public_key);
@@ -39,8 +39,9 @@ class HasPushSubscriptionsTest extends TestCase
         $subscriptions = $this->testUser->pushSubscriptions()->where('endpoint', 'foo')->get();
 
         $this->assertEquals(1, count($subscriptions));
-        $this->assertEquals('major-key', $subscriptions[0]->public_key);
-        $this->assertEquals('another-token', $subscriptions[0]->auth_token);
+        $subscription = $subscriptions->firstOrFail();
+        $this->assertEquals('major-key', $subscription->public_key);
+        $this->assertEquals('another-token', $subscription->auth_token);
     }
 
     #[Test]

@@ -48,8 +48,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification title.
-     *
-     * @return $this
      */
     public function title(string $value): static
     {
@@ -60,20 +58,22 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Add a notification action.
-     *
-     * @return $this
      */
     public function action(string $title, string $action, ?string $icon = null): static
     {
-        $this->actions[] = array_filter(['title' => $title, 'action' => $action, 'icon' => $icon]);
+        $notification_action = ['title' => $title, 'action' => $action];
+
+        if ($icon !== null) {
+            $notification_action['icon'] = $icon;
+        }
+
+        $this->actions[] = $notification_action;
 
         return $this;
     }
 
     /**
      * Set the notification badge.
-     *
-     * @return $this
      */
     public function badge(string $value): static
     {
@@ -84,8 +84,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification body.
-     *
-     * @return $this
      */
     public function body(string $value): static
     {
@@ -96,8 +94,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification direction.
-     *
-     * @return $this
      */
     public function dir(string $value): static
     {
@@ -108,8 +104,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification icon url.
-     *
-     * @return $this
      */
     public function icon(string $value): static
     {
@@ -120,8 +114,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification image url.
-     *
-     * @return $this
      */
     public function image(string $value): static
     {
@@ -132,8 +124,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification language.
-     *
-     * @return $this
      */
     public function lang(string $value): static
     {
@@ -142,9 +132,6 @@ class WebPushMessage implements WebPushMessageInterface
         return $this;
     }
 
-    /**
-     * @return $this
-     */
     public function renotify(bool $value = true): static
     {
         $this->renotify = $value;
@@ -152,9 +139,6 @@ class WebPushMessage implements WebPushMessageInterface
         return $this;
     }
 
-    /**
-     * @return $this
-     */
     public function requireInteraction(bool $value = true): static
     {
         $this->requireInteraction = $value;
@@ -164,8 +148,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification tag.
-     *
-     * @return $this
      */
     public function tag(string $value): static
     {
@@ -178,7 +160,6 @@ class WebPushMessage implements WebPushMessageInterface
      * Set the notification vibration pattern.
      *
      * @param  array<int>  $value
-     * @return $this
      */
     public function vibrate(array $value): static
     {
@@ -189,8 +170,6 @@ class WebPushMessage implements WebPushMessageInterface
 
     /**
      * Set the notification arbitrary data.
-     *
-     * @return $this
      */
     public function data(mixed $value): static
     {
@@ -205,7 +184,6 @@ class WebPushMessage implements WebPushMessageInterface
      * @link https://github.com/web-push-libs/web-push-php#notifications-and-default-options
      *
      * @param  array<string, mixed>  $value
-     * @return $this
      */
     public function options(array $value): static
     {

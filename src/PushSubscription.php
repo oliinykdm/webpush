@@ -38,11 +38,15 @@ class PushSubscription extends Model
     public function __construct(array $attributes = [])
     {
         if ($this->connection === null) {
-            $this->setConnection(config('webpush.database_connection'));
+            /** @var string|null $connection */
+            $connection = config('webpush.database_connection');
+            $this->setConnection($connection);
         }
 
         if ($this->table === null) {
-            $this->setTable(config('webpush.table_name'));
+            /** @var string $table */
+            $table = config('webpush.table_name');
+            $this->setTable($table);
         }
 
         parent::__construct($attributes);
@@ -63,6 +67,6 @@ class PushSubscription extends Model
      */
     public static function findByEndpoint(string $endpoint): ?static
     {
-        return static::firstWhere('endpoint', $endpoint);
+        return static::query()->firstWhere('endpoint', $endpoint);
     }
 }

@@ -38,7 +38,7 @@ class VapidKeysGenerateCommandTest extends TestCase
         }
 
         file_put_contents($envPath = __DIR__.'/temp/.env', 'APP_ENV=testing');
-        $this->app->useEnvironmentPath(__DIR__.'/temp');
+        $this->application->useEnvironmentPath(__DIR__.'/temp');
 
         $exitCode = Artisan::call('webpush:vapid');
 
@@ -47,6 +47,7 @@ class VapidKeysGenerateCommandTest extends TestCase
 
         $envContents = file_get_contents($envPath);
 
+        $this->assertNotFalse($envContents);
         $this->assertMatchesRegularExpression('/^VAPID_PUBLIC_KEY=/m', $envContents);
         $this->assertMatchesRegularExpression('/^VAPID_PRIVATE_KEY=/m', $envContents);
     }

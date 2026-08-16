@@ -135,7 +135,10 @@ class DeclarativeMessageTest extends TestCase
     {
         $this->message->mutable();
 
-        $this->assertTrue($this->message->toArray()['mutable']);
+        $payload = $this->message->toArray();
+
+        $this->assertArrayHasKey('mutable', $payload);
+        $this->assertTrue($payload['mutable']);
     }
 
     #[Test]

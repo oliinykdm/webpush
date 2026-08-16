@@ -4,6 +4,7 @@ namespace NotificationChannels\WebPush;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Config;
 use Minishlink\WebPush\ContentEncoding;
 
 trait HasPushSubscriptions
@@ -15,7 +16,10 @@ trait HasPushSubscriptions
      */
     public function pushSubscriptions(): MorphMany
     {
-        return $this->morphMany(config('webpush.model'), 'subscribable');
+        /** @var class-string<PushSubscription> $model */
+        $model = Config::string('webpush.model');
+
+        return $this->morphMany($model, 'subscribable');
     }
 
     /**
@@ -27,7 +31,9 @@ trait HasPushSubscriptions
             $contentEncoding = ContentEncoding::from($contentEncoding);
         }
 
-        $subscription = app(config('webpush.model'))->findByEndpoint($endpoint);
+        /** @var class-string<PushSubscription> $model */
+        $model = Config::string('webpush.model');
+        $subscription = $model::findByEndpoint($endpoint);
 
         if ($subscription && $this->ownsPushSubscription($subscription)) {
             $subscription->public_key = $key;
@@ -55,7 +61,13 @@ trait HasPushSubscriptions
      */
     public function ownsPushSubscription(PushSubscription $subscription): bool
     {
-        return (string) $subscription->subscribable_id === (string) $this->getKey() &&
+        $key = $this->getKey();
+
+        if (! is_int($key) && ! is_string($key)) {
+            return false;
+        }
+
+        return (string) $subscription->subscribable_id === (string) $key &&
                         $subscription->subscribable_type === $this->getMorphClass();
     }
 

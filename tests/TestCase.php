@@ -15,13 +15,17 @@ abstract class TestCase extends Orchestra
     /** @var User */
     protected $testUser;
 
+    protected Application $application;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->application = $this->app ?? throw new \RuntimeException('Test application is not available.');
+
         $this->setUpDatabase();
 
-        $this->testUser = User::first();
+        $this->testUser = User::firstOrFail();
     }
 
     /**
@@ -91,7 +95,7 @@ abstract class TestCase extends Orchestra
      */
     protected function seeInConsoleOutput(string $expectedText)
     {
-        $consoleOutput = $this->app[Kernel::class]->output();
+        $consoleOutput = $this->application->make(Kernel::class)->output();
 
         $this->assertStringContainsString($expectedText, $consoleOutput, sprintf('Did not see `%s` in console output: `%s`', $expectedText, $consoleOutput));
     }
