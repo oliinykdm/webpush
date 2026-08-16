@@ -2,11 +2,15 @@
 
 namespace NotificationChannels\WebPush;
 
+use GuzzleHttp\Client;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\WebPush;
+use Psr\Http\Client\ClientInterface;
 
 class WebPushServiceProvider extends ServiceProvider
 {
@@ -30,7 +34,7 @@ class WebPushServiceProvider extends ServiceProvider
         $this->app->when(WebPushChannel::class)
             ->needs(WebPush::class)
             ->give(fn (): WebPush => (new WebPush(
-                $this->webPushAuth(), [], 30, $config['client_options']
+                $this->webPushAuth(), [], $this->webPushClient($config['client_options'])
             ))
                 ->setReuseVAPIDHeaders(true)
                 ->setAutomaticPadding($config['automatic_padding']));
@@ -76,6 +80,21 @@ class WebPushServiceProvider extends ServiceProvider
         }
 
         return $config;
+    }
+
+    /**
+     * Create the HTTP client used to deliver push notifications.
+     *
+     * @param  array<mixed>  $options
+     */
+    protected function webPushClient(array $options): ClientInterface
+    {
+        // @phpstan-ignore-next-line Laravel 12 remains supported and requires the Guzzle fallback.
+        if (version_compare(Application::VERSION, '13.13.0', '<')) {
+            return new Client(['timeout' => 30, ...$options]);
+        }
+
+        return Http::timeout(30)->withOptions($options)->buildClient();
     }
 
     /**

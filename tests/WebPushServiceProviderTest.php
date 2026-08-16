@@ -2,13 +2,31 @@
 
 namespace NotificationChannels\WebPush\Test;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Minishlink\WebPush\WebPush;
+use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Client\ClientInterface;
 
 class WebPushServiceProviderTest extends TestCase
 {
+    #[Test]
+    public function it_injects_a_psr_http_client_into_web_push(): void
+    {
+        /** @var WebPushChannel $channel */
+        $channel = $this->application->make(WebPushChannel::class);
+
+        /** @var WebPush $webPush */
+        $webPush = (new \ReflectionProperty($channel, 'webPush'))->getValue($channel);
+        $client = (new \ReflectionProperty($webPush, 'client'))->getValue($webPush);
+
+        $this->assertInstanceOf(ClientInterface::class, $client);
+        $this->assertInstanceOf(Client::class, $client);
+    }
+
     #[Test]
     public function it_publishes_config(): void
     {
