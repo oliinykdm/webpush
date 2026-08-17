@@ -33,7 +33,7 @@ return [
     'database_connection' => env('WEBPUSH_DB_CONNECTION', env('DB_CONNECTION', 'mysql')),
 
     /**
-     * The Guzzle client options used by Minishlink\WebPush.
+     * The HTTP client options used to deliver push notifications.
      */
     'client_options' => [],
 

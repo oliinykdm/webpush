@@ -22,6 +22,10 @@ class WebPushChannel
      */
     public function send(mixed $notifiable, Notification $notification): void
     {
+        if (! is_object($notifiable) || ! method_exists($notifiable, 'routeNotificationFor')) {
+            return;
+        }
+
         /** @var Collection<array-key, PushSubscription> $subscriptions */
         $subscriptions = $notifiable->routeNotificationFor('WebPush', $notification);
 
@@ -32,7 +36,7 @@ class WebPushChannel
         /** @var WebPushMessageInterface $message */
         // @phpstan-ignore-next-line
         $message = $notification->toWebPush($notifiable, $notification);
-        $payload = json_encode($message->toArray());
+        $payload = json_encode($message->toArray(), JSON_THROW_ON_ERROR);
         $options = $message->getOptions();
 
         /** @var PushSubscription $subscription */

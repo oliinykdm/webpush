@@ -2,11 +2,16 @@
 
 namespace NotificationChannels\WebPush;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\WebPush;
+use Psr\Http\Client\ClientInterface;
 
 class WebPushServiceProvider extends ServiceProvider
 {
@@ -25,13 +30,15 @@ class WebPushServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $config = $this->webPushConfig();
+
         $this->app->when(WebPushChannel::class)
             ->needs(WebPush::class)
             ->give(fn (): WebPush => (new WebPush(
-                $this->webPushAuth(), [], 30, config('webpush.client_options', [])
+                $this->webPushAuth(), [], $this->webPushClient($config['client_options']), new HttpFactory, new HttpFactory
             ))
                 ->setReuseVAPIDHeaders(true)
-                ->setAutomaticPadding(config('webpush.automatic_padding')));
+                ->setAutomaticPadding($config['automatic_padding']));
 
         $this->app->when(WebPushChannel::class)
             ->needs(ReportHandlerInterface::class)
@@ -50,7 +57,7 @@ class WebPushServiceProvider extends ServiceProvider
     protected function webPushAuth(): array
     {
         $config = [];
-        $webpush = config('webpush');
+        $webpush = $this->webPushConfig();
         $publicKey = $webpush['vapid']['public_key'];
         $privateKey = $webpush['vapid']['private_key'];
 
@@ -72,6 +79,41 @@ class WebPushServiceProvider extends ServiceProvider
                 $config['VAPID']['pemFile'] = base_path($config['VAPID']['pemFile']);
             }
         }
+
+        return $config;
+    }
+
+    /**
+     * Create the HTTP client used to deliver push notifications.
+     *
+     * @param  array<mixed>  $options
+     */
+    protected function webPushClient(array $options): ClientInterface
+    {
+        // @phpstan-ignore-next-line Laravel 12 remains supported and requires the Guzzle fallback.
+        if (version_compare(Application::VERSION, '13.13.0', '<')) {
+            return new Client(['timeout' => 30, ...$options]);
+        }
+
+        return Http::timeout(30)->withOptions($options)->buildClient();
+    }
+
+    /**
+     * @return array{
+     *     vapid: array{subject: string|null, public_key: string|null, private_key: string|null, pem_file: string|null},
+     *     client_options: array<mixed>,
+     *     automatic_padding: bool|int
+     * }
+     */
+    protected function webPushConfig(): array
+    {
+        /** @var array{
+         *     vapid: array{subject: string|null, public_key: string|null, private_key: string|null, pem_file: string|null},
+         *     client_options: array<mixed>,
+         *     automatic_padding: bool|int
+         * } $config
+         */
+        $config = config('webpush');
 
         return $config;
     }

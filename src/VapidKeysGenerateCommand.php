@@ -4,8 +4,10 @@ namespace NotificationChannels\WebPush;
 
 use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\VAPID;
+use RuntimeException;
 
 class VapidKeysGenerateCommand extends Command
 {
@@ -30,6 +32,13 @@ class VapidKeysGenerateCommand extends Command
     {
         $keys = VAPID::createVapidKeys();
 
+        if (! isset($keys['publicKey'], $keys['privateKey'])
+            || ! is_string($keys['publicKey'])
+            || ! is_string($keys['privateKey'])) {
+            throw new RuntimeException('Unable to generate valid VAPID keys.');
+        }
+
+        /** @var array{publicKey: string, privateKey: string} $keys */
         if ($this->option('show')) {
             $this->line('<comment>VAPID_PUBLIC_KEY='.$keys['publicKey'].'</comment>');
             $this->line('<comment>VAPID_PRIVATE_KEY='.$keys['privateKey'].'</comment>');
@@ -51,7 +60,8 @@ class VapidKeysGenerateCommand extends Command
      */
     protected function setKeysInEnvironmentFile(array $keys): bool
     {
-        $currentKeys = $this->laravel['config']['webpush.vapid'];
+        /** @var array{public_key: string|null, private_key: string|null} $currentKeys */
+        $currentKeys = Config::array('webpush.vapid');
 
         if (strlen((string) $currentKeys['public_key']) !== 0 && (! $this->confirmToProceed())) {
             return false;
@@ -70,6 +80,10 @@ class VapidKeysGenerateCommand extends Command
     protected function writeNewEnvironmentFileWith(array $keys): void
     {
         $contents = file_get_contents($this->laravel->environmentFilePath());
+
+        if ($contents === false) {
+            throw new RuntimeException('Unable to read the environment file.');
+        }
 
         if (! Str::contains($contents, 'VAPID_PUBLIC_KEY')) {
             $contents .= PHP_EOL.'VAPID_PUBLIC_KEY=';
@@ -99,9 +113,10 @@ class VapidKeysGenerateCommand extends Command
      */
     protected function keyReplacementPattern(string $keyName): string
     {
-        $key = $this->laravel['config']['webpush.vapid'];
+        /** @var array{public_key: string|null, private_key: string|null} $keys */
+        $keys = Config::array('webpush.vapid');
 
-        $key = $keyName === 'VAPID_PUBLIC_KEY' ? $key['public_key'] : $key['private_key'];
+        $key = $keyName === 'VAPID_PUBLIC_KEY' ? $keys['public_key'] : $keys['private_key'];
 
         $escaped = preg_quote('='.$key, '/');
 

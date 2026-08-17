@@ -72,6 +72,12 @@ This command will set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in your `.env` 
 
 __These keys must be safely stored and should not change.__
 
+## HTTP Client
+
+On Laravel 13, push notifications use Laravel's HTTP client. Laravel 13.13 or later is required. This means global HTTP middleware, request logging, and `Http::fake()` also apply to web push requests. The package uses a 30-second timeout by default and passes the `client_options` from the published `webpush` configuration to the Laravel HTTP client.
+
+Laravel 12 uses a Guzzle client with the same timeout and `client_options` configuration. This fallback is required because earlier Laravel HTTP clients cannot be safely used as PSR-18 clients.
+
 ## Usage
 
 Now you can use the channel in your `via()` method inside the notification and send a generic web push notification:

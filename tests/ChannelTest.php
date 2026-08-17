@@ -9,6 +9,7 @@ use Minishlink\WebPush\MessageSentReport;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 use Mockery;
+use Mockery\MockInterface;
 use NotificationChannels\WebPush\Events\NotificationFailed;
 use NotificationChannels\WebPush\Events\NotificationSent;
 use NotificationChannels\WebPush\ReportHandler;
@@ -22,15 +23,14 @@ class ChannelTest extends TestCase
     {
         Event::fake();
 
-        /** @var mixed $webpush */
+        /** @var WebPush&MockInterface $webpush */
         $webpush = Mockery::mock(WebPush::class);
-        $channel = new WebPushChannel($webpush, $this->app->make(ReportHandler::class));
+        $channel = new WebPushChannel($webpush, $this->application->make(ReportHandler::class));
         $message = ($notification = new TestNotification)->toWebPush(null, null);
 
         $webpush->shouldReceive('queueNotification')
             ->once()
             ->withArgs(function (Subscription $subscription, string $payload, array $options = [], array $auth = []) use ($message): true {
-                $this->assertInstanceOf(Subscription::class, $subscription);
                 $this->assertEquals('endpoint', $subscription->getEndpoint());
                 $this->assertEquals('key', $subscription->getPublicKey());
                 $this->assertEquals('token', $subscription->getAuthToken());
@@ -60,15 +60,14 @@ class ChannelTest extends TestCase
     {
         Event::fake();
 
-        /** @var mixed $webpush */
+        /** @var WebPush&MockInterface $webpush */
         $webpush = Mockery::mock(WebPush::class);
-        $channel = new WebPushChannel($webpush, $this->app->make(ReportHandler::class));
+        $channel = new WebPushChannel($webpush, $this->application->make(ReportHandler::class));
         $message = ($notification = new TestDeclarativeNotification)->toWebPush(null, null);
 
         $webpush->shouldReceive('queueNotification')
             ->once()
             ->withArgs(function (Subscription $subscription, string $payload, array $options, array $auth = []) use ($message): true {
-                $this->assertInstanceOf(Subscription::class, $subscription);
                 $this->assertEquals('endpoint', $subscription->getEndpoint());
                 $this->assertEquals('key', $subscription->getPublicKey());
                 $this->assertEquals('token', $subscription->getAuthToken());
@@ -98,9 +97,9 @@ class ChannelTest extends TestCase
     {
         Event::fake();
 
-        /** @var mixed $webpush */
+        /** @var WebPush&MockInterface $webpush */
         $webpush = Mockery::mock(WebPush::class);
-        $channel = new WebPushChannel($webpush, $this->app->make(ReportHandler::class));
+        $channel = new WebPushChannel($webpush, $this->application->make(ReportHandler::class));
 
         $webpush->shouldReceive('queueNotification')
             ->times(3);

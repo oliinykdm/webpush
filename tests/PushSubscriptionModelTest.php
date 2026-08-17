@@ -30,6 +30,8 @@ class PushSubscriptionModelTest extends TestCase
         $this->testUser->updatePushSubscription('endpoint');
         $subscription = PushSubscription::findByEndpoint('endpoint');
 
+        $this->assertNotNull($subscription);
+
         $this->assertEquals('endpoint', $subscription->endpoint);
     }
 
@@ -38,6 +40,8 @@ class PushSubscriptionModelTest extends TestCase
     {
         $this->testUser->updatePushSubscription('endpoint');
         $subscription = PushSubscription::findByEndpoint('endpoint');
+
+        $this->assertNotNull($subscription);
 
         $this->assertEquals($this->testUser->id, $subscription->subscribable_id);
         $this->assertEquals($this->testUser::class, $subscription->subscribable_type);

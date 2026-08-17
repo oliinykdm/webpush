@@ -2,13 +2,31 @@
 
 namespace NotificationChannels\WebPush\Test;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Minishlink\WebPush\WebPush;
+use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Client\ClientInterface;
 
 class WebPushServiceProviderTest extends TestCase
 {
+    #[Test]
+    public function it_injects_a_psr_http_client_into_web_push(): void
+    {
+        /** @var WebPushChannel $channel */
+        $channel = $this->application->make(WebPushChannel::class);
+
+        /** @var WebPush $webPush */
+        $webPush = (new \ReflectionProperty($channel, 'webPush'))->getValue($channel);
+        $client = (new \ReflectionProperty($webPush, 'client'))->getValue($webPush);
+
+        $this->assertInstanceOf(ClientInterface::class, $client);
+        $this->assertInstanceOf(Client::class, $client);
+    }
+
     #[Test]
     public function it_publishes_config(): void
     {
@@ -36,7 +54,7 @@ class WebPushServiceProviderTest extends TestCase
     #[Test]
     public function it_publishes_migration(): void
     {
-        $migrationsPath = $this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
+        $migrationsPath = $this->application->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
 
         // Remove any existing matching migrations in the database/migrations folder for a clean test
         foreach (glob($migrationsPath.'*_create_push_subscriptions_table.php') ?: [] as $file) {
@@ -72,7 +90,7 @@ class WebPushServiceProviderTest extends TestCase
     #[Test]
     public function it_does_not_generate_duplicate_migration_if_one_already_exists(): void
     {
-        $migrationsPath = $this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
+        $migrationsPath = $this->application->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
 
         // Ensure migrations directory exists
         if (! is_dir($migrationsPath)) {
@@ -81,8 +99,10 @@ class WebPushServiceProviderTest extends TestCase
 
         // Ensure no existing matching migrations are present before the test
         $existing = glob($migrationsPath.'*_create_push_subscriptions_table.php');
-        foreach ($existing as $file) {
-            @unlink($file);
+        if (is_array($existing)) {
+            foreach ($existing as $file) {
+                @unlink($file);
+            }
         }
 
         // Create a fake existing migration file in the app migrations directory that should be detected and reused
@@ -92,7 +112,7 @@ class WebPushServiceProviderTest extends TestCase
         // Recompute the provider's publishes mapping so it detects the migration file we just created.
         // The service provider computes the destination filename during boot, so we need to refresh it
         // after creating the fake file to ensure vendor:publish reuses the existing file.
-        $provider = new WebPushServiceProvider($this->app);
+        $provider = new WebPushServiceProvider($this->application);
         $ref = new \ReflectionClass($provider);
         $method = $ref->getMethod('definePublishing');
         $method->invoke($provider);
@@ -109,6 +129,7 @@ class WebPushServiceProviderTest extends TestCase
         $found = glob($migrationsPath.'*_'.'create_push_subscriptions_table.php');
 
         // There should be exactly one matching migration (the existing one we created)
+        $this->assertNotFalse($found, 'No migration was found after publishing, expected to find the existing one.');
         $this->assertCount(1, $found, 'A duplicate migration file was created instead of reusing the existing one');
 
         // Cleanup
@@ -120,7 +141,7 @@ class WebPushServiceProviderTest extends TestCase
     #[Test]
     public function it_reuses_existing_migration_filename_when_present(): void
     {
-        $migrationsPath = $this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
+        $migrationsPath = $this->application->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR;
 
         if (! is_dir($migrationsPath)) {
             mkdir($migrationsPath, 0755, true);
@@ -130,7 +151,7 @@ class WebPushServiceProviderTest extends TestCase
         file_put_contents($existingFilename, "<?php\n// existing migration\n");
 
         // Instantiate provider and call protected method getMigrationFileName via reflection
-        $provider = new WebPushServiceProvider($this->app);
+        $provider = new WebPushServiceProvider($this->application);
 
         $ref = new \ReflectionClass($provider);
         $method = $ref->getMethod('getMigrationFileName');

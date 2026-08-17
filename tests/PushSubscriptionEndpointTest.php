@@ -22,7 +22,9 @@ class PushSubscriptionEndpointTest extends TestCase
     #[Test]
     public function upgrade_migration_expands_legacy_endpoint_column(): void
     {
+        /** @var string|null $connection */
         $connection = config('webpush.database_connection');
+        /** @var string $table */
         $table = config('webpush.table_name');
 
         Schema::connection($connection)->drop($table);
