@@ -3,6 +3,7 @@
 namespace NotificationChannels\WebPush;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
@@ -34,7 +35,7 @@ class WebPushServiceProvider extends ServiceProvider
         $this->app->when(WebPushChannel::class)
             ->needs(WebPush::class)
             ->give(fn (): WebPush => (new WebPush(
-                $this->webPushAuth(), [], $this->webPushClient($config['client_options'])
+                $this->webPushAuth(), [], $this->webPushClient($config['client_options']), new HttpFactory, new HttpFactory
             ))
                 ->setReuseVAPIDHeaders(true)
                 ->setAutomaticPadding($config['automatic_padding']));
